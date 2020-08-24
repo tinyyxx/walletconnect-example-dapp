@@ -113,6 +113,8 @@ export interface IGasPrice {
 }
 
 export interface IGasPrices {
+  gas: any;
+  gasPrice: any;
   timestamp: number;
   slow: IGasPrice;
   average: IGasPrice;

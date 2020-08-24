@@ -11,14 +11,14 @@ import Modal from "./components/Modal";
 import Header from "./components/Header";
 import Loader from "./components/Loader";
 import { fonts } from "./styles";
-import { apiGetAccountAssets, apiGetGasPrices, apiGetAccountNonce } from "./helpers/api";
+import { apiGetAccountAssets, apiGetGasPrices, createRawTransaction } from "./helpers/api";
 import {
   sanitizeHex,
   verifySignature,
   hashTypedDataMessage,
   hashPersonalMessage,
 } from "./helpers/utilities";
-import { convertAmountToRawNumber, convertStringToHex } from "./helpers/bignumber";
+import { convertStringToHex } from "./helpers/bignumber";
 import { IAssetData } from "./helpers/types";
 import Banner from "./components/Banner";
 import AccountAssets from "./components/AccountAssets";
@@ -289,42 +289,48 @@ class App extends React.Component<any, any> {
     }
 
     // from
-    const from = address;
-
+    const from = "0x0c50ecD06DFF8C22A9aFC80356d5d7f39921E882";
     // to
-    const to = address;
-
-    // nonce
-    const _nonce = await apiGetAccountNonce(address, chainId);
-    const nonce = sanitizeHex(convertStringToHex(_nonce));
-
-    // gasPrice
-    const gasPrices = await apiGetGasPrices();
-    const _gasPrice = gasPrices.slow.price;
-    const gasPrice = sanitizeHex(convertStringToHex(convertAmountToRawNumber(_gasPrice, 9)));
-
-    // gasLimit
-    const _gasLimit = 21000;
-    const gasLimit = sanitizeHex(convertStringToHex(_gasLimit));
-
+    const to = "0x66337f0a594a4A2B219A3e88e16C0bf597Aa6417";
     // value
-    const _value = 0;
+    const _value = 1000;
     const value = sanitizeHex(convertStringToHex(_value));
 
-    // data
-    const data = "0x";
-
-    // test transaction
-    const tx = {
-      from,
-      to,
-      nonce,
-      gasPrice,
-      gasLimit,
+    const getGasPriceData = {
+      symbol:'RBTC',
+      type:'Testnet',
+      sender: from,
+      receiver: to,
+      chainId,
       value,
-      data,
     };
 
+    // gasPrice
+    const gasPrices = await apiGetGasPrices(getGasPriceData);
+    const _gasPrice = gasPrices.gasPrice.low;
+
+    // gasLimit
+    const _gasLimit = gasPrices.gas;
+
+    const rawTx = {
+      ...getGasPriceData,
+      gasPrice: _gasPrice,
+      gas: _gasLimit,
+    }
+
+    const txObj = await createRawTransaction(rawTx);
+
+    // test transaction
+    // {
+    //   data: "0x"
+    //   from: "0xe555f6D1b478b497796DC110d5672b19f7085357"
+    //   gasLimit: "0x5208"
+    //   gasPrice: "0x0cce416600"
+    //   nonce: "0x00"
+    //   to: "0x66337f0a594a4A2B219A3e88e16C0bf597Aa6417"
+    //   value: "0x00"
+    // }
+    console.log(txObj);
     try {
       // open modal
       this.toggleModal();
@@ -333,7 +339,7 @@ class App extends React.Component<any, any> {
       this.setState({ pendingRequest: true });
 
       // send transaction
-      const result = await connector.sendTransaction(tx);
+      const result = await connector.sendTransaction(txObj);
 
       // format displayed result
       const formattedResult = {

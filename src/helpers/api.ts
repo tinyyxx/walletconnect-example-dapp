@@ -2,11 +2,14 @@ import axios, { AxiosInstance } from "axios";
 import { IAssetData, IGasPrices, IParsedTx } from "./types";
 
 const api: AxiosInstance = axios.create({
-  baseURL: "https://ethereum-api.xyz",
+  baseURL: "http://130.211.12.3/parse/functions",
   timeout: 30000, // 30 secs
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
+    "X-Parse-Application-Id": "rwallet",
+    "X-Parse-REST-API-KEY": "",
+    "Rwallet-API-Key": "masterKey",
   },
 });
 
@@ -31,8 +34,14 @@ export const apiGetAccountNonce = async (address: string, chainId: number): Prom
   return result;
 };
 
-export const apiGetGasPrices = async (): Promise<IGasPrices> => {
-  const response = await api.get(`/gas-prices`);
+export const apiGetGasPrices = async (data: object): Promise<IGasPrices> => {
+  const response = await api.post(`/getTransactionFees`, data);
+  const { result } = response.data;
+  return result;
+};
+
+export const createRawTransaction = async (data: object): Promise<any> => {
+  const response = await api.post(`/createRawTransaction`, data);
   const { result } = response.data;
   return result;
 };
